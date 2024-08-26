@@ -44,6 +44,9 @@ To get the most data possible, we are attempting to automatically start packet c
 - [ ] Figure out if Crystal can shell out long running commands
   - Looks like Fibers and Channels may be needed here.  
 - [ ] How to classify network traffic
+- [x] What tshark commands do we need?
+  - Decision: Derek found some [here](tshark_test_commands.md)
+  - More may be necessary
 - [x] Port scan connected device?
   - **Decision**: Yes
 - [x] Timed recording?
