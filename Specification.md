@@ -18,6 +18,75 @@ To get the most data possible, we are attempting to automatically start packet c
 
 ## Software
 
+```mermaid
+---
+config:
+  look: handDrawn
+---
+%% Made using https://mermaid.live
+flowchart TB
+    subgraph fs1 [Filesystem]
+        direction TB
+        rawJSON ~~~ filteredJSON
+        filteredJSON ~~~ augments
+        augments[Report Augments]
+    end
+
+    subgraph co1 [Crystal Orchestrator]
+        direction TB
+        start --> ws1
+        start --> tw1
+        start -->|Batch Processed at 02:00| ra1
+
+        subgraph tw1 [TShark DHCP Watcher]
+            TSharkDHCP[Tshark DHCP watching]
+            TSharkDHCP --> TSharkDHCP
+        end
+
+        TSharkDHCP -->|DHCP Event noticed, Start recording|tr1
+
+        subgraph ws1 [Webserver]
+            server --> server
+        end
+
+        server -->|End Recording from front end|tr1
+        %% generation ---->|Report Completed|server
+
+        subgraph tr1 [Tshark Recording ... n]
+            record --> rawJSON
+        end
+
+        record-->| End recording received| tf1
+
+        subgraph tf1[Tshark Filters]
+            rawJSON --> filters
+            filters --> filteredJSON
+        end
+
+        filters -->|Filters Completed|generation
+
+        subgraph rg1[Report Generation]
+            filteredJSON --> generation
+            augments --> generation
+            generation ---->|Report Completed|updateServer
+            updateServer ---|This is here cause pointing report completed at server really messes with the look|updateServer            
+        end
+
+         tf1 ~~~ rg1
+
+        subgraph ra1[Augments Updater]
+            internet --> fetch
+            fetch -->|Repeat for each augment| fetch
+            fetch --> augments
+        end
+
+        ra1 ~~~ tf1
+
+        %% generation ---->|Report Completed|server
+
+    end
+```
+
 # Non Goals
 
 ## V1
