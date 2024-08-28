@@ -59,7 +59,9 @@ To get the most data possible, we are attempting to automatically start packet c
 - [ ] What to include in the report?
   - [ ] Autonomous System Number (ASN)?
     - [ ] https://github.com/ipverse/asn-ip for data?
-  - [ ] Blocked by Steven Black DNS Blocking?
+  - [ ] Blocked by DNS Blocking?
+    - [ ] Steven Black https://github.com/StevenBlack/hosts
+    - [ ] https://rodneylab.com/firewall-block-lists-compared/
   - [ ] Shodan Info for connected IPs?
     - Provides some level of free to educational institutions
   - [ ] Data flow?
