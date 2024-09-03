@@ -11,5 +11,6 @@ It also requires Crystal Lang and Wireshark to be installed on that machine.
 ## Relevant Commands
 
 ```bash
-crystal run network_analyzer.cr
+sudo crystal run network_analyzer.cr
 ```
+Why sudo, cause tshark needs sudo.

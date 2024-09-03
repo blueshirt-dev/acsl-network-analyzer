@@ -110,11 +110,12 @@ flowchart TB
 - [ ] TPLink no GUI WAP config?
 
 ## Software
-- [ ] Figure out if Crystal can shell out long running commands
-  - Looks like Fibers and Channels may be needed here.  
+- [x] Figure out if Crystal can shell out long running commands
+  - Looks like Fibers and Channels may be needed here.
+  - **Decision**: Crystal seems to be able to.
 - [ ] How to classify network traffic
 - [x] What tshark commands do we need?
-  - Decision: Derek found some [here](tshark_test_commands.md)
+  - **Decision**: Derek found some [here](tshark_test_commands.md)
   - More may be necessary
 - [x] Port scan connected device?
   - **Decision**: Yes
