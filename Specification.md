@@ -92,7 +92,10 @@ flowchart TB
 ## V1
 - Multiple Devices
 - Preferred Network Offload (PNO) report
-
+- IPV6
+- Deep packet Inspection
+- Self contained in a 10in rack for "portability"
+- dhcp only tshark record trigger
 
 # Scenarios
 
@@ -108,11 +111,13 @@ flowchart TB
   - **Decision**: Both, IPV4 and IPV6
 - [ ] Multiple TShark on mirror?
 - [ ] TPLink no GUI WAP config?
+  - [ ] Run burp and record the process then replay?
 
 ## Software
 - [x] Figure out if Crystal can shell out long running commands
   - Looks like Fibers and Channels may be needed here.
   - **Decision**: Crystal seems to be able to.
+  - [ ] figure out gets command to make tshark dhcp only alerting command
 - [ ] How to classify network traffic
 - [x] What tshark commands do we need?
   - **Decision**: Derek found some [here](tshark_test_commands.md)
@@ -145,5 +150,9 @@ flowchart TB
   - [ ] Greynoise?
   - [ ] https://apackets.com/ breakdown?
   - [ ] Data cost of the device?
-
+  - [ ] Deep Packet Inspection?
+    - [ ] Man In The Middle (MITM) proxy or squid proxy?
+    - [ ] proxy that internally has all DNS point to itself 
+    - [ ] forward everything to the internet so that we can 
+    - [ ] see what data it is actually sending
 # Side notes

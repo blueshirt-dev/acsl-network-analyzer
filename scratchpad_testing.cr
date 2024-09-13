@@ -50,7 +50,7 @@ SOCKETS = [] of HTTP::WebSocket
 #   output: Process::Redirect::Pipe
 #   )
 
-puts "tshark fiber attempt"
+# puts "tshark fiber attempt"
 # spawn do
 #   Process.run(command: "sudo") do |s|
 #     i = s.input
@@ -61,23 +61,163 @@ puts "tshark fiber attempt"
 #     end
 #   end
 # end
-spawn do
-  Process.run(command: "/usr/bin/tshark") do |s|
-    i = s.input
-    o = s.output
-    i.puts "-i 2 -f \"udp port 67 or port 68\""
-    # o.gets.try { |value| channel.send(value)}
-    # 
-    # SOCKETS.each { |socket| socket.send }
-    while true
-      o.gets.try{ |value| SOCKETS.each { |socket| socket.send value} }  
+##This one works but has tshark recording in full and I'd prefer to not do that. 
+# puts Process.parse_arguments("-i wlp1s0 -f \"udp port 67 or port 68\"")
+# spawn do
+#   Process.run(command: "/usr/bin/tshark"
+#   # args: Process.parse_arguments("-i wlp1s0 -f \"udp port 67 or port 68\"")
+#   ) do |s|
+#     i = s.input
+#     o = s.output
+#     e = s.error
+#     # o.gets.try { |value| channel.send(value)}
+#     # 
+#     # SOCKETS.each { |socket| socket.send }
+#     while true
+#       o.gets.try{ |value| #puts value #}
+#         if value.includes?("DHCP ACK")
+#           puts value
+#           puts value.split(" ", remove_empty: true).to_s
+#           SOCKETS.each { |socket| socket.send value}
+#           SOCKETS.each { |socket| socket.send value.split(" ", remove_empty: true)[4]}
+#         end
+#       }
+#       # e.gets.try{ |value| puts "Error: ", value}  
+#     end
+#     # 10.times do
+#     #   channel.send(o.gets)
+#     # end
+#     # s.close
+#   end
+# end
+
+puts "dual pipe tshark"
+dhcp = spawn do
+  reader, writer = IO.pipe
+  Process.run "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"", shell: true, output: writer do |process|
+    until process.terminated?
+      line = reader.gets
+      if line 
+        puts line
+      else 
+        puts "Empty Line"
+      end
     end
-    # 10.times do
-    #   channel.send(o.gets)
-    # end
-    # s.close
   end
 end
+
+# puts "Attempting to get tshark for only dhcp instead of full recording"
+# dhcp = spawn do
+#   dhcpProc = Process.run(command: "/usr/bin/tshark -i wlp1s0 --log-level debug -f \"udp port 67 or port 68\"",
+#   # args: ["-i", "wlp1s0", "-f", "udp port 67 or port 68"]
+#   shell: true,
+#   output: Process::Redirect::Pipe#,
+#   # error: Process::Redirect::Inherit
+#   ) do |s|
+#     # puts s.info
+#     puts s.inspect
+#     i = s.input
+#     o = s.output
+#     # e = s.error
+#     # o.gets.try { |value| channel.send(value)}
+#     # 
+#     # # SOCKETS.each { |socket| socket.send }
+#     while true
+#       # puts o.closed?.to_s
+#       # puts o.info
+#       # puts o.gets_to_end
+#       # puts "before gets"
+#       # # o.gets.try{ |value| puts "Output: ", value }
+#       # puts "before flush"
+#       # # o.flush
+#       # puts "after flush"
+#     #     if value.includes?("DHCP ACK")
+#     #       # puts value
+#     #       puts value.split(" ", remove_empty: true).to_s
+#     #       SOCKETS.each { |socket| 
+#     #         socket.send value
+#     #         socket.send value.split(" ", remove_empty: true)[4]  
+#     #       }
+#     #     end
+#     #   }
+#       # e.gets.try{ |value| puts "Error: ", value} 
+#     end
+#     # 10.times do
+#     #   channel.send(o.gets)
+#     # end
+#     # s.close
+#   end
+#   # puts dhcpProc.exists?.to_s
+# end
+
+# puts "Attempting to get tshark for only dhcp instead of full recording"
+# dhcp = spawn do
+#   dhcpProc = Process.new(command: "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"",
+#   # args: ["-i", "wlp1s0", "-f", "udp port 67 or port 68"]
+#   shell: true,
+#   output: Process::Redirect::Pipe,
+#   error: Process::Redirect::Pipe
+#   ) #do |s|
+#     # i = dhcpProc.input
+#     o = dhcpProc.output
+#     e = dhcpProc.error
+
+
+#     o.read_timeout=(5.seconds)
+#     e.read_timeout=(5.seconds)
+#     # o.gets.try { |value| channel.send(value)}
+#     # 
+#     # # SOCKETS.each { |socket| socket.send }
+#     while true
+#       # puts "Output: "
+#       # puts o.closed?.to_s
+#       # puts o.info
+#       # # puts o.gets_to_end
+#       # puts o.inspect
+#       # puts o.to_s
+
+#       # puts "Error: "
+#       # puts e.closed?.to_s
+#       # puts e.info
+#       # # puts e.gets_to_end
+#       # puts e.inspect
+#       # puts e.to_s
+#       begin 
+#         # puts e.peek.to_s
+#         # puts o.peek.to_s
+#         o.gets.try{ |value| puts "Output: ", value }
+#         e.gets.try{ |value| puts "Error: ", value} 
+#       rescue
+#         puts "Nothing to read"
+#       end
+#     #     if value.includes?("DHCP ACK")
+#     #       # puts value
+#     #       puts value.split(" ", remove_empty: true).to_s
+#     #       SOCKETS.each { |socket| 
+#     #         socket.send value
+#     #         socket.send value.split(" ", remove_empty: true)[4]  
+#     #       }
+#     #     end
+#     #   }
+
+#     end
+#     # 10.times do
+#     #   channel.send(o.gets)
+#     # end
+#     # s.close
+#   # end
+#   # puts dhcpProc.exists?.to_s
+# end
+
+# puts "Different output method attempt"
+# dhcp = spawn do
+#   stdout = IO::Memory.new
+#   process = Process.new(command: "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"", output: stdout)
+#   status = process.wait
+#   10.times do
+#     output = stdout.to_s
+#   end 
+# end
 
 # puts "different tshark attempt"
 # command = "sudo tshark -i wlp1s0 -f \"udp port 67 or port 68\""
@@ -165,7 +305,11 @@ ws "/chat" do |socket|
 
   # Broadcast each message to all clients
   socket.on_message do |message|
-    SOCKETS.each { |socket| socket.send message}
+    SOCKETS.each { |socket| 
+      socket.send message
+      socket.send dhcp.dead?.to_s
+      # socket.send dhcpProc.exits?.to_s
+    }
   end
 
   # Remove clients from the list when it's closed
