@@ -4,16 +4,65 @@
     <title>Kemal Chat</title>
     <script src="https://code.jquery.com/jquery-1.11.3.js"></script>
     <script>
+      class CircularBuffer {
+        constructor(bufferLength) {
+          this.buffer = [];
+          this.pointer = 0;
+          this.bufferLength = bufferLength;
+        }
+        
+        push(element) {
+          this.buffer[this.pointer] = element;
+          this.pointer = (this.pointer + 1) % this.bufferLength;
+          return element;
+        }
+      
+        get(i) {
+          return this.buffer[i];
+        }
+        
+        //Gets the ith element before last one 
+        getLast(i = 0) {
+          return this.buffer[(this.pointer - 1 - i) % this.bufferLength];
+        }
+
+        getNextPointer(){
+          <!-- console.log((this.pointer + 1) % this.bufferLength); -->
+          return (this.pointer + 1) % this.bufferLength;
+        }
+      }
+
       $(document).ready(function() {
         // Open WebSocket connection
         var ws = new WebSocket("ws://" + location.host + "/chat");
+        var messages = new CircularBuffer(10);
         // Append each message
-        ws.onmessage = function(e) { $('#chat').append(e.data + "\n") };
+        ws.onmessage = function(e) { 
+          console.log("------------------ New Message ------------------");
+          <!-- messages.push(e.data + "\n"); -->
+          $('#chat').append(messages.push(e.data + "\n"));
+          console.log("Buffer: ");
+          messages.buffer.forEach(function(entry) {
+            console.log("- ", entry);
+          });
+          console.log("Chat: ");
+          document.getElementById("chat").childNodes.forEach(function(entry) {
+            console.log("- ", entry);
+          });
+          console.log("Pointer: ", messages.pointer);
+          console.log("Remove First Chat Element: ", document.getElementById("chat").childNodes.length > messages.bufferLength)
+          if(document.getElementById("chat").childNodes.length > messages.bufferLength){
+            console.log("ToRemove: ", document.getElementById("chat").childNodes[0])
+            document.getElementById("chat").childNodes[0].remove();
+          }
+          <!-- $('#chat').append(e.data + "\n"); -->
+        };
 
         $("form").bind('submit', function(e) {
           var message = $('#msg').val();
           ws.send(message);
-          $('#msg').val(''); $('#msg').focus();
+          $('#msg').val(''); 
+          $('#msg').focus();
           e.preventDefault();
         });
         window.onbeforeunload = function() {
@@ -21,6 +70,7 @@
           websocket.close()
         };
       });
+
     </script>
   </head>
   <body>
