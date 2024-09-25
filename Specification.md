@@ -89,6 +89,8 @@ flowchart TB
 
 # Non Goals
 
+- Works on WindowsOS
+
 ## V1
 - Multiple Devices
 - Preferred Network Offload (PNO) report

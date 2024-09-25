@@ -3,30 +3,39 @@ require "socket"
 require "kemal"
 
 channel = Channel(String).new
+terminate = Channel(String).new
 SOCKETS = [] of HTTP::WebSocket
 
 #This one works but has tshark recording in full and I'd prefer to not do that. 
-dhcp = spawn do
+dhcp = spawn(name: "dhcpAlertFiber") do
   Process.run(command: "/usr/bin/tshark"
   # args: Process.parse_arguments("-i wlp1s0 -f \"udp port 67 or port 68\"")
-  ) do |process|
-    i = process.input
-    o = process.output
-    e = process.error
-    until process.terminated?
+  ) do |dhcpAlertProcess|
+    i = dhcpAlertProcess.input
+    o = dhcpAlertProcess.output
+    e = dhcpAlertProcess.error
+    until dhcpAlertProcess.terminated?
+      select
+      when terminate.receive?
+        puts "Termination signal received Attempting termination"
+        dhcpAlertProcess.signal(Signal::KILL)
+      else
+        # puts "not terminated"
+      end
       o.gets.try{ |value| #puts value #}
         if value.includes?("DHCP ACK")
           # puts value
           puts value.split(" ", remove_empty: true)[4].to_s
           SOCKETS.each { |socket|
             socket.send value 
-            socket.send value.split(" ", remove_empty: true)[4]
+            socket.send "Add Device: #{value.split(" ", remove_empty: true)[4]}"
           }
         end
       }
       # e.gets.try{ |value| puts "Error: ", value}  
     end
   end
+  puts "dhcpAlertProcess Terminated"
 end
 
 puts "Kemal testing"
@@ -48,6 +57,10 @@ ws "/chat" do |socket|
       socket.send message
       socket.send dhcp.dead?.to_s
       # socket.send dhcpProc.exits?.to_s
+      if message.downcase.includes?("stop")
+        socket.send "Attempting Termination"
+        terminate.close
+      end
     }
   end
 
