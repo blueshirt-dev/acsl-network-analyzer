@@ -25,11 +25,6 @@
         getLast(i = 0) {
           return this.buffer[(this.pointer - 1 - i) % this.bufferLength];
         }
-
-        getNextPointer(){
-          <!-- console.log((this.pointer + 1) % this.bufferLength); -->
-          return (this.pointer + 1) % this.bufferLength;
-        }
       }
 
       $(document).ready(function() {
@@ -38,36 +33,38 @@
         var messages = new CircularBuffer(10);
         // Append each message
         ws.onmessage = function(e) { 
-          console.log("------------------ New Message ------------------");
-          <!-- messages.push(e.data + "\n"); -->
           $('#chat').append(messages.push(e.data + "\n"));
-          console.log("Buffer: ");
-          messages.buffer.forEach(function(entry) {
-            console.log("- ", entry);
-          });
-          console.log("Chat: ");
-          document.getElementById("chat").childNodes.forEach(function(entry) {
-            console.log("- ", entry);
-          });
-          console.log("Pointer: ", messages.pointer);
-          console.log("Remove First Chat Element: ", document.getElementById("chat").childNodes.length > messages.bufferLength)
           if(document.getElementById("chat").childNodes.length > messages.bufferLength){
-            console.log("ToRemove: ", document.getElementById("chat").childNodes[0])
             document.getElementById("chat").childNodes[0].remove();
           }
-          <!-- $('#chat').append(e.data + "\n"); -->
+          if(e.data.includes("Add Device: ")){
+            deviceIP =  e.data.split(":\ ")[1];
+            formAdd = "<label><input type='radio' value='yes' /> yes</label><br>";
+            formAdd = formAdd.replaceAll("yes", deviceIP);
+            $('#deviceList').append(formAdd);
+          }
         };
 
-        $("form").bind('submit', function(e) {
+        $('#messages').bind('submit', function(e) {
+          console.log(e);
           var message = $('#msg').val();
           ws.send(message);
           $('#msg').val(''); 
           $('#msg').focus();
           e.preventDefault();
         });
+
+        $('#devices').bind('submit', function(e) {
+          var formData = new FormData(document.querySelector('#devices'))
+          console.log($('devices').serializeArray());
+          <!-- var message = .val(); -->
+          <!-- ws.send(message); -->
+          e.preventDefault();
+        });
+
         window.onbeforeunload = function() {
-          websocket.onclose = function () {}; // disable onclose handler first
-          websocket.close()
+          ws.onclose = function () {}; // disable onclose handler first
+          ws.close()
         };
       });
 
@@ -75,9 +72,15 @@
   </head>
   <body>
     <pre id='chat'></pre>
-    <form>
+    <form id='messages' name='messages'>
       <input id='msg' placeholder='message...' />
       <input type="submit" value="Send">
+    </form>
+    <form id='devices' name='devices'>
+      <label id='deviceList'>
+        Devices:<br>
+      </label>
+      <input type="submit" value="Stop device">
     </form>
   </body>
 </html>
