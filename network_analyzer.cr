@@ -15,13 +15,6 @@ dhcp = spawn(name: "dhcpAlertFiber") do
     o = dhcpAlertProcess.output
     e = dhcpAlertProcess.error
     until dhcpAlertProcess.terminated?
-      select
-      when terminate.receive?
-        puts "Termination signal received Attempting termination"
-        dhcpAlertProcess.signal(Signal::KILL)
-      else
-        # puts "not terminated"
-      end
       o.gets.try{ |value| #puts value #}
         if value.includes?("DHCP ACK")
           # puts value
@@ -51,7 +44,7 @@ def recordDevice(deviceIP, terminationChannel)
       until recordDeviceProcess.terminated?
         select
         when terminationChannel.receive?
-          puts "Termination signal received Attempting termination"
+          puts "Termination signal received Attempting termination of #{deviceIP} recording"
           recordDeviceProcess.signal(Signal::KILL)
         else
           puts "Recording for #{deviceIP}"
