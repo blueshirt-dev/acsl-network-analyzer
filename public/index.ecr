@@ -46,7 +46,7 @@
         };
 
         $('#messages').bind('submit', function(e) {
-          console.log(e);
+          <!-- console.log(e); -->
           var message = $('#msg').val();
           ws.send(message);
           $('#msg').val(''); 
@@ -55,10 +55,14 @@
         });
 
         $('#devices').bind('submit', function(e) {
-          var formData = new FormData(document.querySelector('#devices'))
-          console.log($('devices').serializeArray());
-          <!-- var message = .val(); -->
-          <!-- ws.send(message); -->
+          var inputs = $('#devices :checked');
+          Array.from(inputs).forEach(function(element){
+            console.log(element);
+            var message = "Stop device: " + element.value;
+            ws.send(message);
+            $(element).parent().remove();
+          })
+
           e.preventDefault();
         });
 
