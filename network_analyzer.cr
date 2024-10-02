@@ -25,10 +25,12 @@ dhcp = spawn(name: "dhcpAlertFiber") do
       o.gets.try{ |value| #puts value #}
         if value.includes?("DHCP ACK")
           # puts value
-          puts value.split(" ", remove_empty: true)[4].to_s
+          deviceIP = value.split(" ", remove_empty: true)[4].to_s
+          puts deviceIP
+          recordDevice(deviceIP, terminate)
           SOCKETS.each { |socket|
             socket.send value 
-            socket.send "Add Device: #{value.split(" ", remove_empty: true)[4]}"
+            socket.send "Added Device: #{deviceIP}"
           }
         end
       }
@@ -36,6 +38,28 @@ dhcp = spawn(name: "dhcpAlertFiber") do
     end
   end
   puts "dhcpAlertProcess Terminated"
+end
+
+def recordDevice(deviceIP, terminationChannel)
+  recordDevice = spawn(name: "recordDevice#{deviceIP}") do
+    Process.run(command: "/usr/bin/tshark",
+    args: Process.parse_arguments("-f \"host #{deviceIP}\" -n -i wlp1s0 -w ./recordings/#{deviceIP}_capture.pcap")
+    ) do |recordDeviceProcess|
+      i = recordDeviceProcess.input
+      o = recordDeviceProcess.output
+      e = recordDeviceProcess.error
+      until recordDeviceProcess.terminated?
+        select
+        when terminationChannel.receive?
+          puts "Termination signal received Attempting termination"
+          recordDeviceProcess.signal(Signal::KILL)
+        else
+          puts "Recording for #{deviceIP}"
+        end
+      end
+    end
+    puts "recordDeviceProcess#{deviceIP} Terminated"
+  end
 end
 
 puts "Kemal testing"

@@ -37,7 +37,7 @@
           if(document.getElementById("chat").childNodes.length > messages.bufferLength){
             document.getElementById("chat").childNodes[0].remove();
           }
-          if(e.data.includes("Add Device: ")){
+          if(e.data.includes("Added Device: ")){
             deviceIP =  e.data.split(":\ ")[1];
             formAdd = "<label><input type='radio' value='yes' /> yes</label><br>";
             formAdd = formAdd.replaceAll("yes", deviceIP);
