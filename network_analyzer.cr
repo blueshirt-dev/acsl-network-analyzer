@@ -21,10 +21,7 @@ dhcp = spawn(name: "dhcpAlertFiber") do
           deviceIP = value.split(" ", remove_empty: true)[4].to_s
           puts deviceIP
           recordDevice(deviceIP, terminate)
-          SOCKETS.each { |socket|
-            socket.send value 
-            socket.send "Added Device: #{deviceIP}"
-          }
+          sendSocketMessage("Added Device: #{deviceIP}")
         end
       }
       # e.gets.try{ |value| puts "Error: ", value}  
@@ -35,6 +32,7 @@ end
 
 def recordDevice(deviceIP, terminationChannel)
   recordDevice = spawn(name: "recordDevice#{deviceIP}") do
+    sendSocketMessage("Recording for #{deviceIP} started")
     Process.run(command: "/usr/bin/tshark",
     args: Process.parse_arguments("-f \"host #{deviceIP}\" -n -i wlp1s0 -w ./recordings/#{deviceIP}_capture.pcap")
     ) do |recordDeviceProcess|
@@ -45,14 +43,24 @@ def recordDevice(deviceIP, terminationChannel)
         select
         when terminationChannel.receive?
           puts "Termination signal received Attempting termination of #{deviceIP} recording"
-          recordDeviceProcess.signal(Signal::KILL)
+          # recordDeviceProcess.signal(Signal::KILL)
+          recordDeviceProcess.terminate(graceful: false)
         else
           puts "Recording for #{deviceIP}"
+          sendSocketMessage("#{deviceIP} recording : #{Time.utc}")
         end
+        sleep 1.minute
       end
     end
     puts "recordDeviceProcess#{deviceIP} Terminated"
+    sendSocketMessage("Recording for #{deviceIP} terminated.")
   end
+end
+
+def sendSocketMessage(message)
+  SOCKETS.each { |socket|
+    socket.send message
+  }
 end
 
 puts "Kemal testing"
@@ -70,15 +78,12 @@ ws "/chat" do |socket|
 
   # Broadcast each message to all clients
   socket.on_message do |message|
-    SOCKETS.each { |socket| 
-      socket.send message
-      socket.send dhcp.dead?.to_s
-      # socket.send dhcpProc.exits?.to_s
-      if message.downcase.includes?("stop")
-        socket.send "Attempting Termination"
-        terminate.close
-      end
-    }
+    sendSocketMessage(message)
+    sendSocketMessage("DHCP recording dead status: #{dhcp.dead?.to_s}")
+    if message.downcase.includes?("stop")
+      socket.send "Attempting Termination"
+      terminate.close
+    end
   end
 
   # Remove clients from the list when it's closed
