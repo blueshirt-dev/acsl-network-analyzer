@@ -31,6 +31,9 @@
         // Open WebSocket connection
         var ws = new WebSocket("ws://" + location.host + "/chat");
         var messages = new CircularBuffer(10);
+        for(i = 0; i < messages.bufferLength; i++){
+          $('#chat').append("\n");
+        }
         // Append each message
         ws.onmessage = function(e) { 
           $('#chat').append(messages.push(e.data + "\n"));
@@ -39,7 +42,7 @@
           }
           if(e.data.includes("Added Device: ")){
             deviceIP =  e.data.split(":\ ")[1];
-            formAdd = "<label><input type='radio' value='yes' /> yes</label><br>";
+            formAdd = "<label><input type='checkbox' value='yes' /> yes</label><br>";
             formAdd = formAdd.replaceAll("yes", deviceIP);
             $('#deviceList').append(formAdd);
           }
