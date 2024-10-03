@@ -2,7 +2,6 @@ require "process"
 require "socket"
 require "kemal"
 
-channel = Channel(String).new
 terminate = Channel(String).new
 SOCKETS = [] of HTTP::WebSocket
 
@@ -42,18 +41,40 @@ def recordDevice(deviceIP, terminationChannel)
       until recordDeviceProcess.terminated?
         select
         when terminationChannel.receive?
-          puts "Termination signal received Attempting termination of #{deviceIP} recording"
+          puts "Termination signal received. Attempting termination of #{deviceIP} recording"
           # recordDeviceProcess.signal(Signal::KILL)
           recordDeviceProcess.terminate(graceful: false)
         else
           puts "Recording for #{deviceIP}"
           sendSocketMessage("#{deviceIP} recording : #{Time.utc}")
         end
-        sleep 1.minute
+        sleep 10.seconds
       end
     end
     puts "recordDeviceProcess#{deviceIP} Terminated"
     sendSocketMessage("Recording for #{deviceIP} terminated.")
+    puts "Calling filters"
+    filterCapturedTraffic(deviceIP)
+  end
+end
+
+def filterCapturedTraffic(deviceIP)
+  spawn(name: "tsharkFiltersFiber") do
+    puts "filtering for #{deviceIP}"
+    sendSocketMessage("Filtering captured output for #{deviceIP}")
+    Process.run(command: "/usr/bin/bash",
+    args: Process.parse_arguments(" -c \"tshark -r ./recordings/#{deviceIP}_capture.pcap -2 -Tfields -R ip -eip.src -eip.dst -eframe.protocols | sort -n | uniq -c | sort -n\"")
+    ) do |process|
+      i = process.input
+      o = process.output
+      e = process.error
+      until process.terminated?
+        o.gets.try{ |value| sendSocketMessage(value)}
+        puts "first filter"
+      end
+    end
+    sendSocketMessage("Filter one complete")
+    puts "filter one done"
   end
 end
 
