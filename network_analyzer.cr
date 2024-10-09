@@ -63,16 +63,26 @@ def filterCapturedTraffic(deviceIP)
     puts "filtering for #{deviceIP}"
     sendSocketMessage("Filtering captured output for #{deviceIP}")
     Process.run(command: "/usr/bin/bash",
-    args: Process.parse_arguments(" -c \"tshark -r ./recordings/#{deviceIP}_capture.pcap -2 -Tfields -R ip -eip.src -eip.dst -eframe.protocols | sort -n | uniq -c | sort -n\"")
-    ) do |process|
-      i = process.input
-      o = process.output
-      e = process.error
-      until process.terminated?
-        o.gets.try{ |value| sendSocketMessage(value)}
-        puts "first filter"
-      end
+    args: Process.parse_arguments(" -c \"tshark -r ./recordings/#{deviceIP}_capture.pcap -2 -R ip -eip.src -eip.dst -eframe.protocols -T json > ./recordings/#{deviceIP}_ips.json \"")) 
+    
+    json = File.open("./recordings/#{deviceIP}_ips.json") do |file|
+      JSON.parse(file)
     end
+    
+    json[0]["_source"]["layers"]["ip.src"][0]
+    
+    ipset = Set(String).new()
+    
+    json.as_a.each do |idx|
+      srcIP = idx["_source"]["layers"]["ip.src"][0].as_s
+      destIP = idx["_source"]["layers"]["ip.dst"][0].as_s
+      ipset.add(srcIP)
+      ipset.add(destIP)
+    end
+
+    # sendSocketMessage(ipset.as_s)
+    puts ipset
+    sendSocketMessage("IPs talked with: #{ipset.to_s}")
     sendSocketMessage("Filter one complete")
     puts "filter one done"
   end

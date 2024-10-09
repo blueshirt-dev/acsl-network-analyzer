@@ -1,6 +1,7 @@
 require "process"
 require "socket"
 require "kemal"
+require "json"
 
 channel = Channel(String).new
 SOCKETS = [] of HTTP::WebSocket
@@ -91,20 +92,20 @@ SOCKETS = [] of HTTP::WebSocket
 #   end
 # end
 
-puts "dual pipe tshark"
-dhcp = spawn do
-  reader, writer = IO.pipe
-  Process.run "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"", shell: true, output: writer do |process|
-    until process.terminated?
-      line = reader.gets
-      if line 
-        puts line
-      else 
-        puts "Empty Line"
-      end
-    end
-  end
-end
+# puts "dual pipe tshark"
+# dhcp = spawn do
+#   reader, writer = IO.pipe
+#   Process.run "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"", shell: true, output: writer do |process|
+#     until process.terminated?
+#       line = reader.gets
+#       if line 
+#         puts line
+#       else 
+#         puts "Empty Line"
+#       end
+#     end
+#   end
+# end
 
 # puts "Attempting to get tshark for only dhcp instead of full recording"
 # dhcp = spawn do
@@ -290,33 +291,61 @@ end
 #   end
 # end
 
-puts "Kemal testing"
-# spawn do
-logging false
-serve_static false
+# puts "Kemal testing"
+# # spawn do
+# logging false
+# serve_static false
 
-get "/" do
-  render "public/index.ecr"
-end
-
-ws "/chat" do |socket|
-  # Add the client to SOCKETS list
-  SOCKETS << socket
-
-  # Broadcast each message to all clients
-  socket.on_message do |message|
-    SOCKETS.each { |socket| 
-      socket.send message
-      socket.send dhcp.dead?.to_s
-      # socket.send dhcpProc.exits?.to_s
-    }
-  end
-
-  # Remove clients from the list when it's closed
-  socket.on_close do
-    SOCKETS.delete socket
-  end
-end
-
-Kemal.run
+# get "/" do
+#   render "public/index.ecr"
 # end
+
+# ws "/chat" do |socket|
+#   # Add the client to SOCKETS list
+#   SOCKETS << socket
+
+#   # Broadcast each message to all clients
+#   socket.on_message do |message|
+#     SOCKETS.each { |socket| 
+#       socket.send message
+#       socket.send dhcp.dead?.to_s
+#       # socket.send dhcpProc.exits?.to_s
+#     }
+#   end
+
+#   # Remove clients from the list when it's closed
+#   socket.on_close do
+#     SOCKETS.delete socket
+#   end
+# end
+
+# Kemal.run
+# end
+# 
+# 
+json = File.open("./recordings/10.11.40.237_ips.json") do |file|
+  JSON.parse(file)
+end
+
+json[0]["_source"]["layers"]["ip.src"][0]
+
+ipset = Set(String).new()
+
+json.as_a.each do |idx|
+  srcIP = idx["_source"]["layers"]["ip.src"][0].as_s
+  destIP = idx["_source"]["layers"]["ip.dst"][0].as_s
+  ipset.add(srcIP)
+  ipset.add(destIP)
+end
+
+ipset.to_json
+
+json = File.open("./ip-api.json") do |file|
+  JSON.parse(file)
+end
+
+json[0]["_source"]["layers"]["ip.src"][0]
+
+json.as_a.each do |idx|
+  srcIP = idx
+end
