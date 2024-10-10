@@ -2,6 +2,7 @@ require "process"
 require "socket"
 require "kemal"
 require "json"
+require "http/client"
 
 channel = Channel(String).new
 SOCKETS = [] of HTTP::WebSocket
@@ -21,7 +22,7 @@ SOCKETS = [] of HTTP::WebSocket
 
 # puts "Which tshark fiber attempt"
 # tshark = ""
-# spawn do 
+# spawn do
 #   Process.run(command: "bash") do |s|
 #     i = s.input
 #     o = s.output
@@ -57,12 +58,12 @@ SOCKETS = [] of HTTP::WebSocket
 #     i = s.input
 #     o = s.output
 #     i.puts "tshark -i wlp1s0 -f \"udp port 67 or port 68\""
-#     10.times do 
+#     10.times do
 #       channel.send(o.gets)
 #     end
 #   end
 # end
-##This one works but has tshark recording in full and I'd prefer to not do that. 
+# #This one works but has tshark recording in full and I'd prefer to not do that.
 # puts Process.parse_arguments("-i wlp1s0 -f \"udp port 67 or port 68\"")
 # spawn do
 #   Process.run(command: "/usr/bin/tshark"
@@ -72,7 +73,7 @@ SOCKETS = [] of HTTP::WebSocket
 #     o = s.output
 #     e = s.error
 #     # o.gets.try { |value| channel.send(value)}
-#     # 
+#     #
 #     # SOCKETS.each { |socket| socket.send }
 #     while true
 #       o.gets.try{ |value| #puts value #}
@@ -83,7 +84,7 @@ SOCKETS = [] of HTTP::WebSocket
 #           SOCKETS.each { |socket| socket.send value.split(" ", remove_empty: true)[4]}
 #         end
 #       }
-#       # e.gets.try{ |value| puts "Error: ", value}  
+#       # e.gets.try{ |value| puts "Error: ", value}
 #     end
 #     # 10.times do
 #     #   channel.send(o.gets)
@@ -98,9 +99,9 @@ SOCKETS = [] of HTTP::WebSocket
 #   Process.run "/usr/bin/tshark -i wlp1s0 -f \"udp port 67 or port 68\"", shell: true, output: writer do |process|
 #     until process.terminated?
 #       line = reader.gets
-#       if line 
+#       if line
 #         puts line
-#       else 
+#       else
 #         puts "Empty Line"
 #       end
 #     end
@@ -121,7 +122,7 @@ SOCKETS = [] of HTTP::WebSocket
 #     o = s.output
 #     # e = s.error
 #     # o.gets.try { |value| channel.send(value)}
-#     # 
+#     #
 #     # # SOCKETS.each { |socket| socket.send }
 #     while true
 #       # puts o.closed?.to_s
@@ -135,13 +136,13 @@ SOCKETS = [] of HTTP::WebSocket
 #     #     if value.includes?("DHCP ACK")
 #     #       # puts value
 #     #       puts value.split(" ", remove_empty: true).to_s
-#     #       SOCKETS.each { |socket| 
+#     #       SOCKETS.each { |socket|
 #     #         socket.send value
-#     #         socket.send value.split(" ", remove_empty: true)[4]  
+#     #         socket.send value.split(" ", remove_empty: true)[4]
 #     #       }
 #     #     end
 #     #   }
-#       # e.gets.try{ |value| puts "Error: ", value} 
+#       # e.gets.try{ |value| puts "Error: ", value}
 #     end
 #     # 10.times do
 #     #   channel.send(o.gets)
@@ -163,11 +164,10 @@ SOCKETS = [] of HTTP::WebSocket
 #     o = dhcpProc.output
 #     e = dhcpProc.error
 
-
 #     o.read_timeout=(5.seconds)
 #     e.read_timeout=(5.seconds)
 #     # o.gets.try { |value| channel.send(value)}
-#     # 
+#     #
 #     # # SOCKETS.each { |socket| socket.send }
 #     while true
 #       # puts "Output: "
@@ -183,20 +183,20 @@ SOCKETS = [] of HTTP::WebSocket
 #       # # puts e.gets_to_end
 #       # puts e.inspect
 #       # puts e.to_s
-#       begin 
+#       begin
 #         # puts e.peek.to_s
 #         # puts o.peek.to_s
 #         o.gets.try{ |value| puts "Output: ", value }
-#         e.gets.try{ |value| puts "Error: ", value} 
+#         e.gets.try{ |value| puts "Error: ", value}
 #       rescue
 #         puts "Nothing to read"
 #       end
 #     #     if value.includes?("DHCP ACK")
 #     #       # puts value
 #     #       puts value.split(" ", remove_empty: true).to_s
-#     #       SOCKETS.each { |socket| 
+#     #       SOCKETS.each { |socket|
 #     #         socket.send value
-#     #         socket.send value.split(" ", remove_empty: true)[4]  
+#     #         socket.send value.split(" ", remove_empty: true)[4]
 #     #       }
 #     #     end
 #     #   }
@@ -217,7 +217,7 @@ SOCKETS = [] of HTTP::WebSocket
 #   status = process.wait
 #   10.times do
 #     output = stdout.to_s
-#   end 
+#   end
 # end
 
 # puts "different tshark attempt"
@@ -256,22 +256,21 @@ SOCKETS = [] of HTTP::WebSocket
 #     i = s.input
 #     o = s.output
 #     i.puts "-c 2 10.11.40.1"
-#     10.times do 
+#     10.times do
 #       channel.send(o.gets)
 #     end
 #   end
 # end
 
 # puts "tshark fiber channel receive"
-# 10.times do 
+# 10.times do
 #   puts channel.receive()
 # end
 
 # puts "ping fiber channel receive"
-# 10.times do 
+# 10.times do
 #   puts channel.receive()
 # end
-
 
 # puts "tshark fiber and read output"
 # spawn do
@@ -306,7 +305,7 @@ SOCKETS = [] of HTTP::WebSocket
 
 #   # Broadcast each message to all clients
 #   socket.on_message do |message|
-#     SOCKETS.each { |socket| 
+#     SOCKETS.each { |socket|
 #       socket.send message
 #       socket.send dhcp.dead?.to_s
 #       # socket.send dhcpProc.exits?.to_s
@@ -321,8 +320,8 @@ SOCKETS = [] of HTTP::WebSocket
 
 # Kemal.run
 # end
-# 
-# 
+#
+#
 json = File.open("./recordings/10.11.40.237_ips.json") do |file|
   JSON.parse(file)
 end
@@ -340,12 +339,27 @@ end
 
 ipset.to_json
 
-json = File.open("./ip-api.json") do |file|
-  JSON.parse(file)
-end
+response = HTTP::Client.post("http://ip-api.com/batch",
+  headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_analyzer"},
+  body: ipset.to_json)
+jsonResponse = response.body
+jsonResponse = JSON.parse(jsonResponse)
+puts jsonResponse
 
-json[0]["_source"]["layers"]["ip.src"][0]
-
-json.as_a.each do |idx|
-  srcIP = idx
+jsonResponse.as_a.each do |idx|
+  status = idx["status"]
+  if status == "fail"
+    message = idx["message"]
+    unknwonIP = idx["query"]
+  puts "Failure of #{unknwonIP}: #{message}" 
+  else
+    country = idx["country"]
+    region = idx["regionName"]
+    city = idx["city"]
+    isp = idx["isp"]
+    org = idx["org"]
+    ip = idx["query"]
+  puts "Info for #{ip}\n Country: #{country}\n Region: #{region}\n City: #{city}\n ISP: #{isp}\n Org: #{org}"
+  
+  end
 end
