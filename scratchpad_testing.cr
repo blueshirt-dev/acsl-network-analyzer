@@ -337,16 +337,30 @@ json.as_a.each do |idx|
   ipset.add(destIP)
 end
 
-ipset.to_json
+ipsArray = ipset.to_a
+counter = 10
+responses = Array(JSON::Any).new
+while ipsArray.size > 0
+  sendSocketMessage("Asking ip-api service for details on IPs visited in batches of 100")
+  response = HTTP::Client.post("http://ip-api.com/batch",
+    headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_Analyzer"},
+    body:   ipsArray.shift(counter).to_json)
+  jsonResponse = JSON.parse(response.body)
+  jsonResponse.as_a.each do |idx|
+    responses.push(idx)
+  end
+  sleep 15.seconds
+end
 
-response = HTTP::Client.post("http://ip-api.com/batch",
-  headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_analyzer"},
-  body: ipset.to_json)
-jsonResponse = response.body
-jsonResponse = JSON.parse(jsonResponse)
+# response = HTTP::Client.post("http://ip-api.com/batch",
+#   headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_analyzer"},
+#   body: ipset.to_json)
+# jsonResponse = response.body
+# jsonResponse = JSON.parse(jsonResponse)
+jsonResponse = JSON.parse("./ip-api.json")
 puts jsonResponse
 
-jsonResponse.as_a.each do |idx|
+responses.each do |idx|
   status = idx["status"]
   if status == "fail"
     message = idx["message"]

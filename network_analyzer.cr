@@ -69,7 +69,7 @@ end
 
 def filteringForIPs(deviceIP)
   Process.run(command: "/usr/bin/bash",
-  args: Process.parse_arguments(" -c \"tshark -r ./recordings/#{deviceIP}_capture.pcap -2 -R ip -eip.src -eip.dst -eframe.protocols -T json > ./recordings/#{deviceIP}_ips.json \"")) 
+    args: Process.parse_arguments(" -c \"tshark -r ./recordings/#{deviceIP}_capture.pcap -2 -R ip -eip.src -eip.dst -eframe.protocols -T json > ./recordings/#{deviceIP}_ips.json \"")) 
   
   json = File.open("./recordings/#{deviceIP}_ips.json") do |file|
     JSON.parse(file)
@@ -86,27 +86,24 @@ def filteringForIPs(deviceIP)
     ipset.add(destIP)
   end
 
-  sendSocketMessage("IPs talked with:\t#{ipset.to_s}")  
-
-  ipset = Set(String).new()
-
-  json.as_a.each do |idx|
-    srcIP = idx["_source"]["layers"]["ip.src"][0].as_s
-    destIP = idx["_source"]["layers"]["ip.dst"][0].as_s
-    ipset.add(srcIP)
-    ipset.add(destIP)
+  sendSocketMessage("IPs talked with:\t#{ipset.size}")  
+  
+  ipsArray = ipset.to_a
+  counter = 100
+  responses = Array(JSON::Any).new
+  while ipsArray.size > 0
+    sendSocketMessage("Asking ip-api service for details on IPs visited in batches of 100")
+    response = HTTP::Client.post("http://ip-api.com/batch",
+      headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_Analyzer"},
+      body:   ipsArray.shift(counter).to_json)
+    jsonResponse = JSON.parse(response.body)
+    jsonResponse.as_a.each do |idx|
+      responses.push(idx)
+    end
+    sleep 15.seconds
   end
   
-  ipset.to_json
-  
-  response = HTTP::Client.post("http://ip-api.com/batch",
-    headers: HTTP::Headers{"User-Agent" => "ACSL_Network_Traffic_analyzer"},
-    body: ipset.to_json)
-  jsonResponse = response.body
-  jsonResponse = JSON.parse(jsonResponse)
-  puts jsonResponse
-  
-  jsonResponse.as_a.each do |idx|
+  responses.each do |idx|
     status = idx["status"]
     if status == "fail"
       message = idx["message"]
